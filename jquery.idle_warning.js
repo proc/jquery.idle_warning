@@ -1,11 +1,14 @@
 /* 
 jquery.idle_warning.js
-VERSION 0.0
+VERSION 0.1
 
 This plugin will fire off the following events:
 idle_warning.tick - This event is fired on every tick of the countdown. Contains the current time string as well. i.e. function( event, time_string)
 idle_warning.warn - This is fired on idle warning
-idle_warning.complete - This is fired once the countdown reaches 0 and the user has already been warned.
+idle_warning.complete - This is fired once the countdown reaches 0 and the idle_warning.warn has been triggered.
+
+This plugin will listen for the following events:
+idle_warning.reset - This will reset the timer and prevent idle_warning.complete from being triggered once idle_warning.warn has already been triggered.
 */
 (function($){
   $.fn.extend({ 
@@ -20,21 +23,22 @@ idle_warning.complete - This is fired once the countdown reaches 0 and the user 
       var global_seconds_after  = options.seconds_after + 1;
       var warned = false;
       
-      function reset_timer() {
+      function reset_timer(elem) {
         global_seconds_before = options.seconds_before + 1;
         global_seconds_after  = options.seconds_after + 1;
         warned = false;
+        elem.trigger('idle_warning.timer_reset');
       }
       
       function time_for_display(seconds) {
         var t_str = "";
         var minutes_display = Math.floor(seconds / 60)
         if (minutes_display > 0) {
-          t_str += minutes_display + "m ";
+          t_str += minutes_display + " minute(s) and ";
         }
         var seconds_display = seconds % 60;
         if (seconds_display > 0) {
-          t_str += seconds_display + "s";
+          t_str += seconds_display + " second(s)";
         }
         if(t_str == "") {
           t_str = "0";
@@ -56,7 +60,6 @@ idle_warning.complete - This is fired once the countdown reaches 0 and the user 
         if ( time_string == "0" ) {
           if ( warned ) {
             elem.trigger('idle_warning.complete');
-            return true;
           } else {
             elem.trigger('idle_warning.warn');
             warned = true;
@@ -67,8 +70,14 @@ idle_warning.complete - This is fired once the countdown reaches 0 and the user 
 
       return this.each(function() {
         var $this = $(this);
-        $this.bind('click', function() { reset_timer(); });
-        $this.bind('idle_warning.reset', function() { reset_timer(); });
+        $this.unbind('click').bind('click', function() { 
+          if(!warned) {
+            // once idle_warning.warn has been triggered, only a 
+            // idle_warning.reset event will reset the timer.
+            reset_timer($this); 
+          } 
+        });
+        $this.unbind('idle_warning.reset').bind('idle_warning.reset', function() { reset_timer($this); });
         tick($this);
       });
     }
