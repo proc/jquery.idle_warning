@@ -26,19 +26,28 @@ idle_warning.reset - This will reset the timer and prevent idle_warning.complete
       function reset_timer(elem) {
         global_seconds_before = options.seconds_before + 1;
         global_seconds_after  = options.seconds_after + 1;
+        console.log(global_seconds_before);
+        console.log(global_seconds_after);
         warned = false;
         elem.trigger('idle_warning.timer_reset');
       }
       
+      function pluralize(count, str) {
+        var plural = str + "s";
+        return (count == 1 ? str : plural)
+      }
+      
       function time_for_display(seconds) {
         var t_str = "";
-        var minutes_display = Math.floor(seconds / 60)
-        if (minutes_display > 0) {
-          t_str += minutes_display + " minute(s) and ";
+        var minutes_numeric = Math.floor(seconds / 60)
+        var seconds_numeric = seconds % 60;
+        var connector = "";
+        if (minutes_numeric > 0) {
+          t_str = minutes_numeric + " " + pluralize(minutes_numeric, "minute");
+          connector = " and ";
         }
-        var seconds_display = seconds % 60;
-        if (seconds_display > 0) {
-          t_str += seconds_display + " second(s)";
+        if (seconds_numeric > 0) {
+          t_str += connector + seconds_numeric + " " + pluralize(seconds_numeric, "second");
         }
         if(t_str == "") {
           t_str = "0";
